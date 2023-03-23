@@ -1,4 +1,4 @@
-# Statistical-Computing-with-R
+# Statistical Computing with R
 
 [00. Introduction](https://github.com/arpansapkota/Statistical-Computing-with-R/blob/main/00_Introduction.R) <br>
 [01. List](https://github.com/arpansapkota/Statistical-Computing-with-R/blob/main/01_List.R) <br>
