@@ -53,7 +53,6 @@ hist(covnep_252days$newCases)
 summary(covnep_252days$newCases)
 boxplot(covnep_252days$newCases)
 
-
 #Work 3: Working with SAQ8.sav file
 (.packages()) #list packages
 #install.packages("foreign")
@@ -62,13 +61,64 @@ library(foreign)
 Arpan_Sapkota_SAQ8 <- read.spss("Desktop/MDS/01 MDS I-I/MDS 503 - Statistical Computing with R/Lab/Arpan Sapkota - SAQ8.sav")
 
 library(haven)
-Arpan_Sapkota_SAQ8 <- read_sav("Desktop/MDS/01 MDS I-I/MDS 503 - Statistical Computing with R/Lab/Arpan Sapkota - SAQ8.sav")
+Arpan_Sapkota_SAQ8_AttributesName <- read_sav("Desktop/MDS/01 MDS I-I/MDS 503 - Statistical Computing with R/Lab/Arpan Sapkota - SAQ8.sav")
+names(Arpan_Sapkota_SAQ8_AttributesName)
 
-table(Arpan_Sapkota_SAQ8)
-summary(Arpan_Sapkota_SAQ8$q01)
+# View the current column names
+names(Arpan_Sapkota_SAQ8)
 
-install.packages("sjPlot")
-library(sjPlot)
+# Rename the columns with its attribute name
+names(Arpan_Sapkota_SAQ8) <- c("Statistics makes me cry", "My friend will think I'm stupid for not being able to cope with SPSS", "Standard deviations excite me", "I dream that Pearson is attacking me with correlation coefficients", "I don't understand statistics", "I have little experience of computers", "All computers hate me", "I have never been good at mathematics")
 
-data(efc)
-sjt.frq(efc$e42dep)
+#install.packages('epiDisplay')
+library(epiDisplay)
+
+tab1(Arpan_Sapkota_SAQ8$`Statistics makes me cry`)
+tab1(Arpan_Sapkota_SAQ8$`Standard deviations excite me`)
+tab1(Arpan_Sapkota_SAQ8$`I have little experience of computers`)
+tab1(Arpan_Sapkota_SAQ8$`I have never been good at mathematics`)
+
+#Easy way to get the frequency table but sjp.frq() wont work now
+#library(sjPlot)
+#sjp.frq()
+
+
+#Work 4: Working with MR_drugs.xls file
+# Calculate the multiple response frequencies for all the income columns
+
+#install.packages("readxl")
+library(readxl)
+
+#Loading the xls file
+Arpan_Sapkota_MR_Drugs <- read_excel("Desktop/MDS/01 MDS I-I/MDS 503 - Statistical Computing with R/Lab/Arpan Sapkota - MR_Drugs.xlsx")
+
+# Install the summarytools package 
+#install.packages("summarytools")
+
+# Load the summarytools package
+#library(summarytools)
+
+head(Arpan_Sapkota_MR_Drugs)
+#names(Arpan_Sapkota_MR_Drugs[4:10])
+
+# Calculate the counts and percentages for each income variable
+incomes <- c("inco1", "inco2", "inco3", "inco4", "inco5", "inco6", "inco7")
+counts <- sapply(Arpan_Sapkota_MR_Drugs[incomes], sum)
+percentages <- round(counts/sum(counts) * 100, 1)
+
+# Create a data frame with the counts and percentages
+income_freq <- data.frame(
+  Income = incomes,
+  Frequencies = counts,
+  Percent = percentages,
+  `Percent.of.Cases` = round(percentages / 100 * 182.9, 1)
+)
+
+# Add a row for the total count and percentage
+income_freq <- rbind(
+  income_freq,
+  c("Total", sum(counts), 100, 182.9)
+)
+
+# Print the table
+income_freq
