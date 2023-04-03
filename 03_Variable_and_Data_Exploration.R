@@ -37,11 +37,18 @@ plot(covnep_252days$date,cumsum(covnep_252days$totalCases))
 summary(covnep_252days$totalCases)
 boxplot(covnep_252days$totalCases)
 
+#Problem in summary The minimum value can’t be 0
+#So, we change row 2:60 of totalCases as 1
+covnep_252days$totalCases[2:60] <- 1
+
+#Again Get correct summary of totalCases:
+summary(covnep_252days$totalCases)
+
 #Removing the outliers from the data
-bp<-boxplot.stats(covnep_252days$totalCases)
-outliers <- bp$out
-clean_data <- subset(covnep_252days$totalCases, !covnep_252days$totalCases %in% outliers)
-summary(clean_data)
+#bp<-boxplot.stats(covnep_252days$totalCases)
+#outliers <- bp$out
+#clean_data <- subset(covnep_252days$totalCases, !covnep_252days$totalCases %in% outliers)
+#summary(clean_data)
 
 #df<-data.frame(covnep_252days,stringsAsFactors = FALSE)
 #summary(df$totalCases)
@@ -52,6 +59,7 @@ hist(covnep_252days$newCases)
 #Get summary of newCases
 summary(covnep_252days$newCases)
 boxplot(covnep_252days$newCases)
+
 
 #Work 3: Working with SAQ8.sav file
 (.packages()) #list packages
@@ -81,6 +89,21 @@ tab1(Arpan_Sapkota_SAQ8$`I have never been good at mathematics`)
 #Easy way to get the frequency table but sjp.frq() wont work now
 #library(sjPlot)
 #sjp.frq()
+
+##Another Way
+library(foreign)
+Arpan_Sapkota_SAQ8 <- read.spss(file.choose())
+Arpan_Sapkota_SAQ8 <- read.spss(Arpan_Sapkota_SAQ8.sav) #working folder
+class(Arpan_Sapkota_SAQ8) 
+str(Arpan_Sapkota_SAQ8)
+library(plyr)
+table.q1 <- count(Arpan_Sapkota_SAQ8$q01)
+table.q1$percent <- round(table.q1$freq/sum(table.q1$freq)*100,1)
+table.q1$val.percent <- table.q1$percent #As no missing values present!
+table.q1$cum.percent <- cumsum(table.q1$percent)
+colnames(table.q1) <- c("Q01", "Frequency", "Percent", "Valid Percent","Cumulative Percent")
+table.q1 #And same for other tables 
+
 
 
 #Work 4: Working with MR_drugs.xls file
