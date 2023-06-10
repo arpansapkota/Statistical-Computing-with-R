@@ -1,0 +1,136 @@
+---
+title: "Project 1 - Text Mining of Five Files"
+author: "Arpan Sapkota"
+date: "2023-04-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project 1 - Text Mining of Five Files
+
+**You must search and download first five (5) free pdf files on the topic of your choice from Google Scholar (<https://scholar.google.com/>)**
+
+**You must put these five (5) pdf files in a folder called “MDS503P1”**
+
+**Use the “pdftools” package to read these five pdf files in R**
+
+**Once you read the text of these pdf files in R then create a “corpus” with tm package**
+
+**Perform pre-processing of the corpus followed by getting term-document matrix to show the most frequent terms, word clouds with and without color, network graph, and topic modeling with comments/interpretation for each step as done in the class today **
+
+## 1. Loading PDF files related to the Healthcare Data Analytics
+```{r, warning=FALSE}
+#1. Use the "pdftools" package to read the five PDF files in R:
+library(pdftools)
+
+# Set the working directory to the folder where the PDF files are stored
+setwd("/Users/arpan/Desktop/MDS/01 MDS I-I/MDS 503 - Statistical Computing with R/Lab/MDS503P1")
+
+# Read the five PDF files and store them in a list
+pdf_files <- list.files(pattern = "*.pdf")
+pdf_text <- lapply(pdf_files, pdf_text)
+
+pdf_files
+```
+## 2. Creating Corpus
+```{r, warning=FALSE}
+#2. Create a "corpus" with the "tm" package:
+
+library(tm)
+
+# Create a corpus from the pdf_text list
+corpus <- Corpus(VectorSource(unlist(pdf_text)))
+
+str(corpus)
+
+# Inspect the corpus to ensure it has been created correctly
+#inspect(corpus)
+inspect(corpus[1:1])
+```
+
+## 3. Pre-processing of the Corpus
+```{r, warning=FALSE}
+#3. Perform pre-processing of the corpus:
+
+# Convert all text to lowercase
+corpus <- tm_map(corpus, content_transformer(tolower))
+
+# Remove numbers, punctuation, and whitespace
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, stripWhitespace)
+
+# Remove stop words
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+
+#removing unwanted html links and "\n" new line in the Corpus
+corpus <- tm_map(corpus, content_transformer(function(x) gsub("http[^[:space:]]*","", x)))
+corpus <- tm_map(corpus, content_transformer(function(x) gsub("\\n*","", x)))
+corpus <- tm_map(corpus, content_transformer(function(x) gsub("–","", x)))
+#inspect(corpus) #inspect the results in corpus
+
+# Inspect the corpus to ensure pre-processing has been done correctly
+inspect(corpus[1:1])
+```
+
+## 4. Term-Document Matrix
+```{r, warning=FALSE}
+#4. Get term-document matrix to show the most frequent terms:
+
+# Create the term-document matrix
+tdm <- TermDocumentMatrix(corpus, control = list(wordLength=c(1,Inf)))
+
+# Get the most frequent terms cosidering lower frequency = 20
+freq_terms <- findFreqTerms(tdm, lowfreq = 20)
+
+# Inspect the most frequent terms
+freq_terms
+
+#Converting the TDM to an matrix form
+m <- as.matrix(tdm)
+freq_Count <- sort(rowSums(m),decreasing = T)  #counting the term frequency 
+head(freq_Count,20)   #first 20  frequency counts
+```
+
+## 5. Word Cloud
+```{r, warning=FALSE}
+#5. Create a word cloud with and without color:
+library(wordcloud)
+par(mar = c(2, 3, 2, 3)) #(bottom, left, top, right margins)
+
+#Without color
+wordcloud(words = names(freq_Count), freq = freq_Count, min.freq = 5, random.order = FALSE)
+
+
+#With color
+wordcloud(words = names(freq_Count), freq = freq_Count, min.freq = 5, 
+          random.order = FALSE, colors = rainbow(length(freq_Count)))
+
+```
+
+## 6. Network Graph
+```{r, warning=FALSE}
+#6. Create a network graph:
+library(graph)
+library(Rgraphviz)
+plot(tdm, term = freq_terms, corThreshold = 0.5)
+```
+
+## 7. Topic modeling 
+```{r, warning=FALSE}
+#7. Topic modeling 
+library(tm)
+library(topicmodels)
+set.seed(07)
+
+dtm <- as.DocumentTermMatrix(t(tdm), weighting = weightTf)
+lda_Model <- LDA(dtm, k=5)
+
+
+#getting the terms in the topic model
+terms(lda_Model, 5)
+```
+
