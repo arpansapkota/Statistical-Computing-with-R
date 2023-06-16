@@ -1,0 +1,125 @@
+---
+title: "Presentation Task - Supervised Regression Model"
+author: "Arpan Sapkota"
+date: "2023-06-11"
+output: html_document
+---
+
+## 1. Download the Individual recode file from: https://dhsprogram.com/data/Download-Model-Datasets.cfm
+
+```{r }
+
+setwd("/Users/arpan/Desktop/MDS/01 MDS I-I/MDS 503 - Statistical Computing with R/Lab/Data")
+
+library(haven)
+data <- read_sav("ZZIR62FL.SAV")
+head(data)
+
+
+```
+
+
+## 2. Read it in R Studio and split it into training (80%) and testing (20%) datasets with set.seed as your class roll number
+```{r}
+set.seed(07)
+# Split into training and testing datasets
+library(caret)
+#trainIndex <- createDataPartition(data$V201, p = 0.8, list = FALSE)
+train_indices <- sample(nrow(data), floor(0.8 * nrow(data)))
+train_data <- data[train_indices, ]
+test_data <- data[-train_indices, ]
+```
+
+## 3. Fit a supervised regression model on the training data with Total Children Ever Born (V201) as dependent variable and age group (V013), region (V024), type of place of residence (V025), highest education level (V106) and wealth index (V190) as independent variables and interpret the result carefully, check VIF too and do the needful statistically if required 
+```{r}
+model <- lm(V201 ~ V013 + V024 + V025 + V106 + V190, data = train_data)
+summary(model)
+
+# Check VIF
+library(car)
+vif(model)  # Check for multicollinearity
+
+```
+- R-squared and Adjusted R-squared:
+The R-squared value (0.6209) represents the proportion of variance in the dependent variable that can be explained by the independent variables in the model. In this case, around 62.09% of the variability in the dependent variable is explained by the independent variables.
+
+- F-statistic and p-value:
+The F-statistic (2186) is a measure of the overall significance of the model. The associated p-value (p < 2.2e-16) indicates that the model as a whole is highly significant, suggesting that the independent variables jointly have a significant impact on the dependent variable.
+
+The linear regression model suggests that age group (V013), type of place of residence (V025), highest education level (V106), and wealth index (V190) have significant associations with the number of children ever born (V201), while the region (V024) variable does not show a significant relationship. The model explains approximately 62% of the variability in the dependent variable.
+
+## 4. Get the R-square and RMSE of this fitted model on training data using caret package
+```{r}
+library(caret)
+predictions <- predict(model, newdata = train_data)
+
+# Get R-square and RMSE
+rsquare_train <- caret::R2(predictions, train_data$V201)
+rsquare_train
+
+rmse_train <- caret::RMSE(predictions, train_data$V201)
+rmse_train
+
+```
+- Model has an R-squared value of 0.6209, which means that approximately 62.09% of the variability in the dependent variable (Total Children Ever Born) is explained by the independent variables (age group, region, type of place of residence, highest education level, and wealth index) included in the model. This indicates a moderate level of explanatory power.
+
+- The root mean squared error (RMSE) value of 1.658 means that, on average, the predicted values from the model deviate from the actual values by approximately 1.658 units. 
+Lower RMSE values indicate a better fit, so this value could be considered moderate in terms of prediction accuracy.
+
+
+## 5. Predict the dependent variable on the test data and get the R-square and RMSE using caret package
+```{r}
+# Predict on the test data
+test_predictions <- predict(model, newdata = test_data)
+
+# Calculate R-square and RMSE on the test data
+rsquare_test <- caret::R2(test_predictions, test_data$V201)
+rsquare_test
+
+rmse_test <- caret::RMSE(test_predictions, test_data$V201)
+rmse_test
+```
+
+
+## 6. Tune the R-square and RMSE values of the testing model using LOOCV, k-fold cross validation and k-fold cross-validation with repeated samples using caret package
+```{r}
+# Tune the model 
+
+#Define the train control:
+loocv_control <- trainControl(method = "LOOCV")
+kfold_control <- trainControl(method = "cv", number = 10)
+repeated_control <- trainControl(method = "repeatedcv", number = 10, repeats = 5)
+
+#Train the models and evaluate R-square and RMSE:
+# Train model with LOOCV
+model_loocv <- train(V201 ~ V013 + V024 + V025 + V106 + V190, data = train_data, method = "lm",
+                     trControl = loocv_control, preProcess = c("center", "scale"))
+rsquare_loocv <- model_loocv$results$Rsquared
+rmse_loocv <- model_loocv$results$RMSE
+
+# Train model with k-fold Cross-Validation
+model_kfold <- train(V201 ~ V013 + V024 + V025 + V106 + V190, data = train_data, method = "lm",
+                     trControl = kfold_control, preProcess = c("center", "scale"))
+rsquare_kfold <- model_kfold$results$Rsquared
+rmse_kfold <- model_kfold$results$RMSE
+
+# Train model with k-fold Cross-Validation with Repeated Samples
+model_repeated <- train(V201 ~ V013 + V024 + V025 + V106 + V190, data = train_data, method = "lm",
+                        trControl = repeated_control, preProcess = c("center", "scale"))
+rsquare_repeated <- model_repeated$results$Rsquared
+rmse_repeated <- model_repeated$results$RMSE
+
+```
+
+## 7. Compare the R-square and RMSE of all the model and choose the one for final prediction
+```{r}
+results <- data.frame(Method = c("LOOCV", "k-fold CV", "Repeated k-fold CV"),
+                      R_Square = c(rsquare_loocv, rsquare_kfold, rsquare_repeated),
+                      RMSE = c(rmse_loocv, rmse_kfold, rmse_repeated))
+
+# Print the results
+print(results)
+
+```
+
+The differences in R-squared and RMSE among the three methods are quite small. Therefore, any of these methods can be considered for the final prediction. However, based on the slightly higher R-squared and slightly lower RMSE, the k-fold CV method may be preferred.
